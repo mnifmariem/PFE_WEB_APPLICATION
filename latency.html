@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Latency Analysis</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2.2.1/dist/chartjs-plugin-annotation.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <style>
+    :root {
+      --primary-color: #0d6efd;
+      --success-bg: #d4edda;
+      --success-text: #155724;
+      --error-bg: #f8d7da;
+      --error-text: #721c24;
+      --sidebar-width: 250px;
+    }
+
+    body {
+      background-color: #ffffff;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      height: 100vh;
+    }
+
+    #sidebar {
+      width: var(--sidebar-width);
+      background-color: #f8f9fa;
+      padding: 20px;
+      height: 100%;
+      position: fixed;
+      top: 0;
+      left: 0;
+      overflow-y: auto;
+      box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+      transition: transform 0.3s;
+    }
+
+    #sidebar.collapsed {
+      transform: translateX(-100%);
+    }
+
+    #sidebar .nav-link {
+      color: #333;
+      padding: 10px 15px;
+      text-decoration: none;
+      display: block;
+      border-radius: 5px;
+      margin-bottom: 5px;
+    }
+
+    #sidebar .nav-link:hover, #sidebar .nav-link.active {
+      background-color: #e9ecef;
+      color: var(--primary-color);
+    }
+
+    #sidebar-toggle {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background-color: #f8f9fa;
+      border: 1px solid #f8f9fa;
+      border-radius: 5px;
+      padding: 5px 10px;
+      cursor: pointer;
+      font-size: 1.5rem;
+      z-index: 1001;
+      display: block !important;
+      width: 40px;
+      height: 40px;
+      text-align: center;
+      transition: transform 0.3s, left 0.3s, right 0.3s;
+    }
+
+    #sidebar.collapsed #sidebar-toggle {
+      display: none;
+    }
+
+    #toggle-container {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      z-index: 1000;
+      display: none;
+    }
+
+    #sidebar.collapsed ~ #content #toggle-container {
+      display: block;
+    }
+
+    #toggle-container button {
+      background-color: #ffffff;
+      border: 1px solid #dee2e6;
+      color: #333;
+      border-radius: 5px;
+      padding: 5px 10px;
+      cursor: pointer;
+      font-size: 1.5rem;
+      width: 40px;
+      height: 40px;
+      text-align: center;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    #content {
+      margin-left: var(--sidebar-width);
+      padding: 20px;
+      flex-grow: 1;
+      overflow-y: auto;
+      transition: margin-left 0.3s;
+      position: relative;
+    }
+
+    #content.shifted {
+      margin-left: 0;
+    }
+
+    .analysis-section {
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      flex: 1 1 100%;
+      min-width: 300px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      transition: transform 0.2s;
+    }
+
+    .analysis-section:hover {
+      transform: translateY(-5px);
+    }
+
+    h1, h2 {
+      text-align: center;
+    }
+
+    h1 {
+      padding: 0 20px;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    .data-selection #dataSelectContainer {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: nowrap;
+      gap: 5px;
+      overflow-x: auto;
+      padding: 5px 0;
+    }
+
+    .data-selection button {
+      padding: 5px 10px;
+      border: 1px solid #dee2e6;
+      border-radius: 5px;
+      background-color: #fff;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .data-selection button.selected {
+      background-color: #0d6efd;
+      color: #fff;
+    }
+
+    .selected-datasizes {
+      flex: 1;
+      min-width: 0;
+      display: none;
+    }
+
+    .selected-datasizes div {
+      padding: 5px 10px;
+      background-color: #e9ecef;
+      border-radius: 5px;
+      overflow-x: auto;
+      white-space: nowrap;
+      min-height: 30px;
+    }
+
+    .selected-datasizes.active {
+      display: block;
+    }
+
+    .chart-wrapper {
+      margin-top: 20px;
+    }
+
+    .chart-container {
+      height: 400px;
+      position: relative;
+    }
+
+    .chart-controls, .table-controls {
+      margin-bottom: 10px;
+      overflow-x: auto;
+      white-space: nowrap;
+      padding: 5px 0;
+    }
+
+    .chart-controls button, .table-controls button {
+      margin-right: 10px;
+      padding: 5px 10px;
+      font-size: 14px;
+      border: none;
+      background: none;
+      cursor: pointer;
+    }
+
+    .chart-controls button:hover, .table-controls button:hover {
+      background-color: #e9ecef;
+      border-radius: 5px;
+    }
+
+    .table-wrapper {
+      margin-top: 20px;
+      position: relative;
+      z-index: 1;
+      overflow: visible;
+    }
+
+    .table-inner {
+      background-color: #fff;
+      will-change: transform;
+    }
+
+    .table-inner:fullscreen {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      box-sizing: border-box;
+      background-color: #fff;
+    }
+
+    .table-inner:fullscreen table {
+      width: 100%;
+      max-width: 100%;
+      font-size: 1.2rem;
+    }
+
+    .table-wrapper table {
+      width: 100%;
+      font-size: 0.9rem;
+    }
+
+    .table-wrapper th, .table-wrapper td {
+      text-align: center;
+      vertical-align: middle;
+    }
+
+    h1.text-center {
+      margin-top: 70px;
+      margin-bottom: 60px;
+    }
+
+    h2.text-center {
+      margin-top: 40px;
+      margin-bottom: 40px;
+    }
+
+    @media (max-width: 768px) {
+      #sidebar {
+        transform: translateX(-100%);
+      }
+      #content {
+        margin-left: 0;
+      }
+      .analysis-section {
+        flex: 1 1 100%;
+      }
+      .data-selection #dataSelectContainer {
+        flex-wrap: wrap;
+      }
+      .data-selection button {
+        padding: 3px 6px;
+      }
+      .selected-datasizes div {
+        padding: 3px 6px;
+      }
+      .chart-container {
+        height: 300px;
+      }
+      .table-wrapper table {
+        font-size: 0.8rem;
+      }
+      .table-inner:fullscreen table {
+        font-size: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="sidebar">
+    <button id="sidebar-toggle" onclick="toggleSidebar()">
+      <i class="bi bi-list"></i>
+    </button>
+    <h3 class="text-center mb-4">Menu</h3>
+    <a href="index.html" class="nav-link">Data Upload & Processing</a>
+    <a href="algorithms.html" class="nav-link">FFT vs Goertzel Analysis</a>
+    <a href="energy.html" class="nav-link">Energy Consumption</a>
+    <a href="latency.html" class="nav-link active">Latency</a>
+    <a href="scenarios.html" class="nav-link">Scenario Comparison</a>
+    <a href="report.html" class="nav-link">Comprehensive Report</a>
+  </div>
+  <div id="content">
+    <div id="toggle-container">
+      <button id="sidebar-toggle-collapsed" onclick="toggleSidebar()">
+        <i class="bi bi-arrow-left" style="color: #333;"></i>
+      </button>
+    </div>
+    <h1><i class="bi bi-gear"></i> IoT Predictive Maintenance Analysis Platform </h1>
+    <h2><i class="bi bi-stopwatch" style="color: #0d6efd;"></i> Latency Analysis </h2>
+    <div class="analysis-section">
+      <h4>Analysis Parameters</h4>
+      <div class="form-group data-selection">
+        <label>Select Data Size for Analysis:</label>
+        <div id="dataSelectContainer">
+          <button class="data-option" value="100">100</button>
+          <button class="data-option" value="250">250</button>
+          <button class="data-option" value="480">480</button>
+          <button class="data-option" value="600">600</button>
+          <button class="data-option" value="1000">1000</button>
+        </div>
+        <div class="selected-datasizes">
+          <label>Selected Data Sizes for Analysis:</label>
+          <div id="selectedDataSizes" contenteditable="true"></div>
+        </div>
+      </div>
+      <h4>Latency Analysis: Scenarios Comparison</h4>
+      <div class="chart-wrapper">
+        <div class="chart-container">
+          <div class="chart-controls">
+            <button id="downloadPngLatency" data-bs-toggle="tooltip" title="Download PNG"><i class="bi bi-download"></i></button>
+            <button id="zoomSelectLatency" data-bs-toggle="tooltip" title="Zoom Select"><i class="bi bi-zoom-in"></i></button>
+            <button id="panLatency" data-bs-toggle="tooltip" title="Pan"><i class="bi bi-arrows-move"></i></button>
+            <button id="zoomInLatency" data-bs-toggle="tooltip" title="Zoom In"><i class="bi bi-zoom-in"></i></button>
+            <button id="zoomOutLatency" data-bs-toggle="tooltip" title="Zoom Out"><i class="bi bi-zoom-out"></i></button>
+            <button id="autoscaleLatency" data-bs-toggle="tooltip" title="Autoscale"><i class="bi bi-fullscreen"></i></button>
+            <button id="fullScreenLatency" data-bs-toggle="tooltip" title="Full Screen"><i class="bi bi-arrows-fullscreen"></i></button>
+          </div>
+          <canvas id="latencyChart"></canvas>
+        </div>
+      </div>
+      <h4>Transmission, Reception, and Processing Time Comparison</h4>
+      <div class="chart-wrapper">
+        <div class="chart-container">
+          <div class="chart-controls">
+            <button id="downloadPngTransmissionProcessing" data-bs-toggle="tooltip" title="Download PNG"><i class="bi bi-download"></i></button>
+            <button id="zoomSelectTransmissionProcessing" data-bs-toggle="tooltip" title="Zoom Select"><i class="bi bi-zoom-in"></i></button>
+            <button id="panTransmissionProcessing" data-bs-toggle="tooltip" title="Pan"><i class="bi bi-arrows-move"></i></button>
+            <button id="zoomInTransmissionProcessing" data-bs-toggle="tooltip" title="Zoom In"><i class="bi bi-zoom-in"></i></button>
+            <button id="zoomOutTransmissionProcessing" data-bs-toggle="tooltip" title="Zoom Out"><i class="bi bi-zoom-out"></i></button>
+            <button id="autoscaleTransmissionProcessing" data-bs-toggle="tooltip" title="Autoscale"><i class="bi bi-fullscreen"></i></button>
+            <button id="fullScreenTransmissionProcessing" data-bs-toggle="tooltip" title="Full Screen"><i class="bi bi-arrows-fullscreen"></i></button>
+          </div>
+          <canvas id="transmissionProcessingChart"></canvas>
+        </div>
+      </div>
+      <div class="table-wrapper">
+        <h4>Latency Comparison Results</h4>
+        <div class="table-controls">
+          <button id="downloadCsvLatency" data-bs-toggle="tooltip" title="Download CSV"><i class="bi bi-file-earmark-arrow-down"></i></button>
+          <button id="fullScreenTableLatency" data-bs-toggle="tooltip" title="Full Screen"><i class="bi bi-arrows-fullscreen"></i></button>
+        </div>
+        <div class="table-inner">
+          <table class="table table-bordered table-hover">
+            <thead>
+              <tr>
+                <th>Data Size</th>
+                <th>Scenario 1 (Raw Data) Latency (ms)</th>
+                <th>Scenario 2 (Goertzel) Latency (ms)</th>
+                <th>Reduction Percentage (%)</th>
+              </tr>
+            </thead>
+            <tbody id="latencyTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Latency data
+    const dataSizes = [100, 250, 480, 600, 1000];
+    const latencyS1 = [277.8, 606.4, 1126, 1435, 2369]; // Scenario 1: Raw Data
+    const latencyS2 = [184.21, 363.51, 659.11, 808.71, 1360.21]; // Scenario 2: Goertzel (Total latency)
+
+    // Transmission + Reception Time (in ms)
+    const transScenario1 = [277.8, 606.4, 1126, 1435, 2369]; // Same as latencyS1
+    const transScenario2 = [74.21, 74.21, 74.21, 74.21, 74.21];
+
+    // Processing Time (in ms) for Scenario 2
+    const procScenario2 = [110, 289.3, 584.9, 734.5, 1286];
+
+    // Calculate processing time per sample (in ms/sample)
+    const procTimePerSample = procScenario2.map((t, i) => t / dataSizes[i]);
+
+    // Calculate processing time per sample per frequency (in ms/sample/frequency)
+    const procTimePerSamplePerFreq = procTimePerSample.map(t => t / 6);
+
+    // Calculate reduction percentage for original data sizes
+    const reductionPercent = dataSizes.map((_, i) => 100 * (latencyS1[i] - latencyS2[i]) / latencyS1[i]);
+
+    // Function to download table data as CSV
+    function downloadTableAsCSV(tableId, filename) {
+      const table = document.querySelector(`#${tableId}`).parentElement.parentElement; // Get the full table
+      if (!table) return;
+
+      const rows = table.querySelectorAll('tr');
+      const csv = [];
+      
+      // Add header
+      const headers = Array.from(rows[0].querySelectorAll('th')).map(th => `"${th.textContent.replace(/"/g, '""')}"`);
+      csv.push(headers.join(','));
+
+      // Add data rows
+      for (let i = 1; i < rows.length; i++) {
+        const cols = Array.from(rows[i].querySelectorAll('td')).map(td => `"${td.textContent.replace(/"/g, '""')}"`);
+        csv.push(cols.join(','));
+      }
+
+      // Create CSV file and trigger download
+      const csvContent = csv.join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      link.click();
+      URL.revokeObjectURL(link.href);
+    }
+
+    // Function to update the latency comparison table
+    function updateLatencyTable(labels, s1Data, s2Data, reductionData) {
+      const tableBody = document.getElementById('latencyTableBody');
+      tableBody.innerHTML = ''; // Clear existing rows
+      labels.forEach((size, i) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${size}</td>
+          <td>${s1Data[i].toFixed(1)}</td>
+          <td>${s2Data[i].toFixed(1)}</td>
+          <td>${reductionData[i].toFixed(1)}</td>
+        `;
+        tableBody.appendChild(row);
+      });
+    }
+
+    // Initialize Latency Chart
+    const ctxLatency = document.getElementById('latencyChart').getContext('2d');
+    const latencyChart = new Chart(ctxLatency, {
+      type: 'line',
+      data: {
+        labels: dataSizes,
+        datasets: [
+          {
+            label: 'Scenario 1: Raw Data',
+            data: latencyS1,
+            borderColor: '#1f77b4',
+            backgroundColor: '#1f77b4',
+            pointStyle: 'circle',
+            pointRadius: 5,
+            pointHoverRadius: 7,
+            borderWidth: 2,
+            fill: false
+          },
+          {
+            label: 'Scenario 2: Goertzel',
+            data: latencyS2,
+            borderColor: '#ff7f0e',
+            backgroundColor: '#ff7f0e',
+            pointStyle: 'square',
+            pointRadius: 5,
+            pointHoverRadius: 7,
+            borderWidth: 2,
+            fill: false
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: {
+            type: 'category',
+            title: {
+              display: true,
+              text: 'Data Size (samples)',
+              font: { size: 12 }
+            }
+          },
+          y: {
+            title: {
+              display: true,
+              text: 'Latency (milliseconds)',
+              font: { size: 12 }
+            },
+            beginAtZero: true
+          }
+        },
+        plugins: {
+          title: {
+            display: false // Title moved to HTML
+          },
+          legend: {
+            position: 'top',
+            labels: { font: { size: 10 } }
+          },
+          annotation: {
+            annotations: [
+              ...dataSizes.map((x, i) => ({
+                type: 'line',
+                xMin: x,
+                xMax: x,
+                yMin: latencyS1[i],
+                yMax: latencyS1[i] + 30,
+                borderColor: 'rgba(0, 0, 0, 0)',
+                label: {
+                  content: `${latencyS1[i].toFixed(1)}`,
+                  position: 'top',
+                  yAdjust: 30,
+                  xAdjust: 0,
+                  font: { size: 9 },
+                  color: '#1f77b4',
+                  backgroundColor: 'rgba(255, 255, 255, 0.8)'
+                }
+              })),
+              ...dataSizes.map((x, i) => ({
+                type: 'line',
+                xMin: x,
+                xMax: x,
+                yMin: latencyS2[i],
+                yMax: latencyS2[i] + 30,
+                borderColor: 'rgba(0, 0, 0, 0)',
+                label: {
+                  content: `${latencyS2[i].toFixed(1)}`,
+                  position: 'top',
+                  yAdjust: 30,
+                  xAdjust: 0,
+                  font: { size: 9 },
+                  color: '#ff7f0e',
+                  backgroundColor: 'rgba(255, 255, 255, 0.8)'
+                }
+              }))
+            ]
+          },
+          zoom: {
+            pan: {
+              enabled: false,
+              mode: 'xy'
+            },
+            zoom: {
+              wheel: {
+                enabled: false
+              },
+              pinch: {
+                enabled: false
+              },
+              mode: 'xy',
+              drag: {
+                enabled: false
+              }
+            }
+          }
+        },
+        interaction: {
+          mode: 'nearest',
+          intersect: false
+        }
+      }
+    });
+
+    // Initialize Transmission and Processing Time Chart
+    const ctxTransmission = document.getElementById('transmissionProcessingChart').getContext('2d');
+    const transmissionProcessingChart = new Chart(ctxTransmission, {
+      type: 'bar',
+      data: {
+        labels: dataSizes,
+        datasets: [
+          {
+            label: 'Scenario 1 - Transmission+Reception',
+            data: transScenario1,
+            backgroundColor: 'skyblue',
+            borderColor: 'skyblue',
+            borderWidth: 1,
+            type: 'bar',
+            order: 2,
+            barPercentage: 0.8,
+            categoryPercentage: 0.9
+          },
+          {
+            label: 'Scenario 2 - Transmission+Reception',
+            data: transScenario2,
+            backgroundColor: 'orange',
+            borderColor: 'orange',
+            borderWidth: 1,
+            type: 'bar',
+            order: 2,
+            stack: 'Scenario2',
+            barPercentage: 0.8,
+            categoryPercentage: 0.9
+          },
+          {
+            label: 'Scenario 2 - Processing Time',
+            data: procScenario2,
+            backgroundColor: 'mediumseagreen',
+            borderColor: 'mediumseagreen',
+            borderWidth: 1,
+            type: 'bar',
+            order: 2,
+            stack: 'Scenario2',
+            barPercentage: 0.8,
+            categoryPercentage: 0.9
+          },
+          {
+            label: 'Processing Time per Sample (ms/sample/6frequencies)',
+            data: procTimePerSample,
+            borderColor: 'purple',
+            backgroundColor: 'purple',
+            pointStyle: 'circle',
+            pointRadius: 5,
+            pointHoverRadius: 7,
+            borderWidth: 2,
+            fill: false,
+            type: 'line',
+            order: 1,
+            yAxisID: 'y1'
+          },
+          {
+            label: 'Processing Time per Sample per Frequency (ms/sample/frequency)',
+            data: procTimePerSamplePerFreq,
+            borderColor: '#ff00ff',
+            backgroundColor: '#ff00ff',
+            pointStyle: 'triangle',
+            pointRadius: 5,
+            pointHoverRadius: 7,
+            borderWidth: 2,
+            fill: false,
+            type: 'line',
+            order: 1,
+            yAxisID: 'y1'
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: {
+            type: 'category',
+            title: {
+              display: true,
+              text: 'Data Size (samples)',
+              font: { size: 12 }
+            }
+          },
+          y: {
+            title: {
+              display: true,
+              text: 'Processing Time (ms)',
+              font: { size: 12 }
+            },
+            beginAtZero: true,
+            position: 'left'
+          },
+          y1: {
+            title: {
+              display: true,
+              text: 'Processing Time per Sample (ms/sample)',
+              font: { size: 12 }
+            },
+            position: 'right',
+            grid: {
+              drawOnChartArea: false
+            },
+            ticks: {
+              color: 'purple',
+              callback: function(value, index, values) {
+                const tickValues = [0.100, 0.125, 0.150, 0.175, 0.200, 0.225, 0.250, 0.275, 1.100, 1.125, 1.150, 1.175, 1.200, 1.225, 1.250, 1.275];
+                return tickValues.includes(value) ? value.toFixed(3) : '';
+              },
+              min: 0.100,
+              max: 1.275,
+              stepSize: 0.025
+            }
+          }
+        },
+        plugins: {
+          title: {
+            display: false
+          },
+          legend: {
+            position: 'top',
+            labels: { font: { size: 10 } }
+          },
+          annotation: {
+            annotations: {}
+          },
+          zoom: {
+            pan: {
+              enabled: false,
+              mode: 'xy'
+            },
+            zoom: {
+              wheel: {
+                enabled: false
+              },
+              pinch: {
+                enabled: false
+              },
+              mode: 'xy',
+              drag: {
+                enabled: false
+              }
+            }
+          }
+        },
+        interaction: {
+          mode: 'nearest',
+          intersect: false
+        }
+      }
+    });
+
+    // Chart and Table controls
+    const charts = [
+      { id: 'latencyChart', buttonPrefix: 'Latency', chart: () => latencyChart, container: '.chart-container' },
+      { id: 'transmissionProcessingChart', buttonPrefix: 'TransmissionProcessing', chart: () => transmissionProcessingChart, container: '.chart-container' }
+    ];
+
+    charts.forEach(({ id, buttonPrefix, chart, container }) => {
+      // Download PNG
+      document.getElementById(`downloadPng${buttonPrefix}`).addEventListener('click', () => {
+        const link = document.createElement('a');
+        link.download = `${id}_plot.png`;
+        link.href = chart().toBase64Image();
+        link.click();
+      });
+
+      // Zoom Select
+      document.getElementById(`zoomSelect${buttonPrefix}`).addEventListener('click', () => {
+        if (chart()) {
+          chart().options.plugins.zoom.zoom.drag.enabled = !chart().options.plugins.zoom.zoom.drag.enabled;
+          chart().options.plugins.zoom.pan.enabled = false;
+          chart().update();
+        }
+      });
+
+      // Pan
+      document.getElementById(`pan${buttonPrefix}`).addEventListener('click', () => {
+        if (chart()) {
+          chart().options.plugins.zoom.pan.enabled = !chart().options.plugins.zoom.pan.enabled;
+          chart().options.plugins.zoom.zoom.drag.enabled = false;
+          chart().update();
+        }
+      });
+
+      // Zoom In
+      document.getElementById(`zoomIn${buttonPrefix}`).addEventListener('click', () => {
+        if (chart()) {
+          chart().zoom(1.2);
+        }
+      });
+
+      // Zoom Out
+      document.getElementById(`zoomOut${buttonPrefix}`).addEventListener('click', () => {
+        if (chart()) {
+          chart().zoom(0.8);
+        }
+      });
+
+      // Autoscale
+      document.getElementById(`autoscale${buttonPrefix}`).addEventListener('click', () => {
+        if (chart()) {
+          chart().resetZoom();
+        }
+      });
+
+      // Full Screen
+      document.getElementById(`fullScreen${buttonPrefix}`).addEventListener('click', () => {
+        const chartContainer = document.getElementById(id).parentElement;
+        if (!document.fullscreenElement) {
+          chartContainer.requestFullscreen().catch(err => {
+            console.error(`Error entering full screen for ${id}:`, err);
+          });
+        } else {
+          document.exitFullscreen();
+        }
+      });
+    });
+
+    // Table controls
+    document.getElementById('downloadCsvLatency').addEventListener('click', () => {
+      downloadTableAsCSV('latencyTableBody', 'latency_comparison.csv');
+    });
+
+    document.getElementById('fullScreenTableLatency').addEventListener('click', () => {
+      const tableContainer = document.querySelector('.table-inner');
+      if (!document.fullscreenElement) {
+        tableContainer.requestFullscreen().catch(err => {
+          console.error('Error entering full screen for latencyTableBody:', err);
+        });
+      } else {
+        document.exitFullscreen();
+      }
+    });
+
+    // Force redraw on browser zoom
+    window.addEventListener('resize', () => {
+      const table = document.querySelector('.table-inner table');
+      if (table) {
+        table.style.display = 'none';
+        setTimeout(() => {
+          table.style.display = 'table';
+        }, 0);
+      }
+    });
+
+    // Data selection functionality
+    document.querySelectorAll('.data-option').forEach(button => {
+      button.addEventListener('click', () => {
+        button.classList.toggle('selected');
+        const selectedDataSizes = Array.from(document.querySelectorAll('.data-option.selected')).map(btn => parseInt(btn.value));
+        document.getElementById('selectedDataSizes').textContent = selectedDataSizes.length > 0 ? selectedDataSizes.join(', ') : '';
+        const selectedDatasizesDiv = document.querySelector('.selected-datasizes');
+        selectedDatasizesDiv.classList.toggle('active', selectedDataSizes.length > 0);
+
+        // Filter chart data based on selected data sizes
+        const filteredLabels = dataSizes.filter(size => selectedDataSizes.length === 0 || selectedDataSizes.includes(size));
+        const filteredLatencyS1 = filteredLabels.map(size => latencyS1[dataSizes.indexOf(size)]);
+        const filteredLatencyS2 = filteredLabels.map(size => latencyS2[dataSizes.indexOf(size)]);
+        const filteredReductionPercent = filteredLabels.map((_, i) => 100 * (latencyS1[dataSizes.indexOf(filteredLabels[i])] - latencyS2[dataSizes.indexOf(filteredLabels[i])]) / latencyS1[dataSizes.indexOf(filteredLabels[i])]);
+        const filteredTransScenario1 = filteredLabels.map(size => transScenario1[dataSizes.indexOf(size)]);
+        const filteredTransScenario2 = filteredLabels.map(size => transScenario2[dataSizes.indexOf(size)]);
+        const filteredProcScenario2 = filteredLabels.map(size => procScenario2[dataSizes.indexOf(size)]);
+        const filteredProcTimePerSample = filteredProcScenario2.map((t, i) => t / filteredLabels[i]);
+        const filteredProcTimePerSamplePerFreq = filteredProcTimePerSample.map(t => t / 6);
+
+        // Update latencyChart
+        latencyChart.data.labels = filteredLabels;
+        latencyChart.data.datasets[0].data = filteredLatencyS1;
+        latencyChart.data.datasets[1].data = filteredLatencyS2;
+        latencyChart.update();
+
+        // Update transmissionProcessingChart
+        transmissionProcessingChart.data.labels = filteredLabels;
+        transmissionProcessingChart.data.datasets[0].data = filteredTransScenario1;
+        transmissionProcessingChart.data.datasets[1].data = filteredTransScenario2;
+        transmissionProcessingChart.data.datasets[2].data = filteredProcScenario2;
+        transmissionProcessingChart.data.datasets[3].data = filteredProcTimePerSample;
+        transmissionProcessingChart.data.datasets[4].data = filteredProcTimePerSamplePerFreq;
+        transmissionProcessingChart.update();
+
+        // Update the latency comparison table
+        updateLatencyTable(filteredLabels, filteredLatencyS1, filteredLatencyS2, filteredReductionPercent);
+      });
+    });
+
+    // Sidebar toggle function
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const content = document.getElementById('content');
+      const toggleBtn = document.getElementById('sidebar-toggle');
+      const toggleCollapsedBtn = document.getElementById('sidebar-toggle-collapsed');
+      const isCollapsed = sidebar.classList.toggle('collapsed');
+      content.classList.toggle('shifted');
+      toggleBtn.style.display = isCollapsed ? 'none' : 'block';
+      toggleCollapsedBtn.style.display = isCollapsed ? 'block' : 'none';
+    }
+
+    // Initial check and table population
+    document.addEventListener('DOMContentLoaded', () => {
+      const toggleBtn = document.getElementById('sidebar-toggle');
+      const toggleCollapsedBtn = document.getElementById('sidebar-toggle-collapsed');
+      toggleBtn.style.display = 'block';
+      toggleCollapsedBtn.style.display = 'none';
+      // Initialize table with all data
+      updateLatencyTable(dataSizes, latencyS1, latencyS2, reductionPercent);
+
+      // Initialize tooltips
+      var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+      var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+      });
+    });
+  </script>
+</body>
+</html>
