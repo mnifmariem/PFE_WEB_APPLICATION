@@ -192,6 +192,26 @@
     .chart-container {
       height: 400px;
       position: relative;
+      width: 100%;
+    }
+
+    .chart-container:fullscreen {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: #fff;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    .chart-container:fullscreen canvas {
+      width: 100% !important;
+      height: auto !important;
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
     }
 
     .chart-controls, .table-controls {
@@ -240,7 +260,7 @@
     .table-inner:fullscreen table {
       width: 100%;
       max-width: 100%;
-      font-size: 1.2rem;
+      font-size: inherit;
     }
 
     table {
@@ -297,7 +317,7 @@
         margin-top: 10px;
       }
       .table-inner:fullscreen table {
-        font-size: 1rem;
+        font-size: inherit;
       }
     }
   </style>
@@ -340,11 +360,10 @@
         </div>
       </div>
       <div class="chart-wrapper">
-        <div class="chart-container">
+        <div class="chart-container" id="energyChartContainer">
           <div class="chart-controls">
             <button id="downloadPngEnergy" data-bs-toggle="tooltip" title="Download PNG"><i class="bi bi-download"></i></button>
-            <button id="zoomSelectEnergy" data-bs-toggle="tooltip" title="Zoom Select"><i class="bi bi-zoom-in"></i></button>
-            <button id="panEnergy" data-bs-toggle="tooltip" title="Pan"><i class="bi bi-arrows-move"></i></button>
+            <button id="zoomSelectEnergy" data-bs-toggle="tooltip" title="Zoom Select"><i class="bi bi-crop"></i></button>
             <button id="zoomInEnergy" data-bs-toggle="tooltip" title="Zoom In"><i class="bi bi-zoom-in"></i></button>
             <button id="zoomOutEnergy" data-bs-toggle="tooltip" title="Zoom Out"><i class="bi bi-zoom-out"></i></button>
             <button id="autoscaleEnergy" data-bs-toggle="tooltip" title="Autoscale"><i class="bi bi-fullscreen"></i></button>
@@ -354,11 +373,10 @@
         </div>
       </div>
       <div class="chart-wrapper">
-        <div class="chart-container">
+        <div class="chart-container" id="energySavingChartContainer">
           <div class="chart-controls">
             <button id="downloadPngEnergySaving" data-bs-toggle="tooltip" title="Download PNG"><i class="bi bi-download"></i></button>
-            <button id="zoomSelectEnergySaving" data-bs-toggle="tooltip" title="Zoom Select"><i class="bi bi-zoom-in"></i></button>
-            <button id="panEnergySaving" data-bs-toggle="tooltip" title="Pan"><i class="bi bi-arrows-move"></i></button>
+            <button id="zoomSelectEnergySaving" data-bs-toggle="tooltip" title="Zoom Select"><i class="bi bi-crop"></i></button>
             <button id="zoomInEnergySaving" data-bs-toggle="tooltip" title="Zoom In"><i class="bi bi-zoom-in"></i></button>
             <button id="zoomOutEnergySaving" data-bs-toggle="tooltip" title="Zoom Out"><i class="bi bi-zoom-out"></i></button>
             <button id="autoscaleEnergySaving" data-bs-toggle="tooltip" title="Autoscale"><i class="bi bi-fullscreen"></i></button>
@@ -395,11 +413,10 @@
         </div>
       </div>
       <div class="chart-wrapper">
-        <div class="chart-container">
+        <div class="chart-container" id="regressionChartContainer">
           <div class="chart-controls">
             <button id="downloadPngRegression" data-bs-toggle="tooltip" title="Download PNG"><i class="bi bi-download"></i></button>
-            <button id="zoomSelectRegression" data-bs-toggle="tooltip" title="Zoom Select"><i class="bi bi-zoom-in"></i></button>
-            <button id="panRegression" data-bs-toggle="tooltip" title="Pan"><i class="bi bi-arrows-move"></i></button>
+            <button id="zoomSelectRegression" data-bs-toggle="tooltip" title="Zoom Select"><i class="bi bi-crop"></i></button>
             <button id="zoomInRegression" data-bs-toggle="tooltip" title="Zoom In"><i class="bi bi-zoom-in"></i></button>
             <button id="zoomOutRegression" data-bs-toggle="tooltip" title="Zoom Out"><i class="bi bi-zoom-out"></i></button>
             <button id="autoscaleRegression" data-bs-toggle="tooltip" title="Autoscale"><i class="bi bi-fullscreen"></i></button>
@@ -409,11 +426,10 @@
         </div>
       </div>
       <div class="chart-wrapper">
-        <div class="chart-container">
+        <div class="chart-container" id="savingsTrendChartContainer">
           <div class="chart-controls">
             <button id="downloadPngSavingsTrend" data-bs-toggle="tooltip" title="Download PNG"><i class="bi bi-download"></i></button>
-            <button id="zoomSelectSavingsTrend" data-bs-toggle="tooltip" title="Zoom Select"><i class="bi bi-zoom-in"></i></button>
-            <button id="panSavingsTrend" data-bs-toggle="tooltip" title="Pan"><i class="bi bi-arrows-move"></i></button>
+            <button id="zoomSelectSavingsTrend" data-bs-toggle="tooltip" title="Zoom Select"><i class="bi bi-crop"></i></button>
             <button id="zoomInSavingsTrend" data-bs-toggle="tooltip" title="Zoom In"><i class="bi bi-zoom-in"></i></button>
             <button id="zoomOutSavingsTrend" data-bs-toggle="tooltip" title="Zoom Out"><i class="bi bi-zoom-out"></i></button>
             <button id="autoscaleSavingsTrend" data-bs-toggle="tooltip" title="Autoscale"><i class="bi bi-fullscreen"></i></button>
@@ -511,6 +527,25 @@
     const savingsPercentFuture = futureSizes.map((_, i) => 100 * (futurePred1[i] - futurePred2[i]) / futurePred1[i]);
     const allSizes = [...dataSizes, ...futureSizes];
     const allSavingsPercent = [...savingsPercentOriginal, ...savingsPercentFuture];
+
+    // Function to resize canvas for full-screen clarity
+    function resizeCanvas(chartInstance) {
+      if (!chartInstance) return;
+      const canvas = chartInstance.canvas;
+      const container = canvas.parentElement;
+      const pixelRatio = window.devicePixelRatio || 1;
+
+      // Get container dimensions
+      const width = container.clientWidth * pixelRatio;
+      const height = container.clientHeight * pixelRatio;
+
+      // Update canvas dimensions
+      canvas.width = width;
+      canvas.height = height;
+
+      // Ensure Chart.js uses the correct dimensions
+      chartInstance.resize();
+    }
 
     // Initialize Regression Chart
     const ctxRegression = document.getElementById('regressionChart').getContext('2d');
@@ -1022,71 +1057,112 @@
 
     // Chart and Table controls
     const charts = [
-      { id: 'energyChart', buttonPrefix: 'Energy', chart: () => energyChart, container: '.chart-container' },
-      { id: 'energySavingChart', buttonPrefix: 'EnergySaving', chart: () => energySavingChart, container: '.chart-container' },
-      { id: 'regressionChart', buttonPrefix: 'Regression', chart: () => regressionChart, container: '.chart-container' },
-      { id: 'savingsTrendChart', buttonPrefix: 'SavingsTrend', chart: () => savingsTrendChart, container: '.chart-container' }
+      { id: 'energyChart', buttonPrefix: 'Energy', chart: () => energyChart, container: '#energyChartContainer' },
+      { id: 'energySavingChart', buttonPrefix: 'EnergySaving', chart: () => energySavingChart, container: '#energySavingChartContainer' },
+      { id: 'regressionChart', buttonPrefix: 'Regression', chart: () => regressionChart, container: '#regressionChartContainer' },
+      { id: 'savingsTrendChart', buttonPrefix: 'SavingsTrend', chart: () => savingsTrendChart, container: '#savingsTrendChartContainer' }
     ];
 
-    charts.forEach(({ id, buttonPrefix, chart, container }) => {
-      // Download PNG
+    // Download PNG for charts
+    charts.forEach(({ id, buttonPrefix, chart }) => {
       document.getElementById(`downloadPng${buttonPrefix}`).addEventListener('click', () => {
-        const link = document.createElement('a');
-        link.download = `${id}_plot.png`;
-        link.href = chart().toBase64Image();
-        link.click();
+        const chartInstance = chart();
+        if (chartInstance) {
+          const link = document.createElement('a');
+          link.download = `${id}_plot.png`;
+          link.href = chartInstance.toBase64Image();
+          link.click();
+        } else {
+          console.error(`Chart instance for ${id} not found`);
+        }
       });
 
       // Zoom Select
       document.getElementById(`zoomSelect${buttonPrefix}`).addEventListener('click', () => {
-        if (chart()) {
-          chart().options.plugins.zoom.zoom.drag.enabled = !chart().options.plugins.zoom.zoom.drag.enabled;
-          chart().options.plugins.zoom.pan.enabled = false;
-          chart().update();
-        }
-      });
-
-      // Pan
-      document.getElementById(`pan${buttonPrefix}`).addEventListener('click', () => {
-        if (chart()) {
-          chart().options.plugins.zoom.pan.enabled = !chart().options.plugins.zoom.pan.enabled;
-          chart().options.plugins.zoom.zoom.drag.enabled = false;
-          chart().update();
+        const chartInstance = chart();
+        if (chartInstance) {
+          chartInstance.options.plugins.zoom.zoom.drag.enabled = !chartInstance.options.plugins.zoom.zoom.drag.enabled;
+          chartInstance.update();
+        } else {
+          console.error(`Chart instance for ${id} not found`);
         }
       });
 
       // Zoom In
       document.getElementById(`zoomIn${buttonPrefix}`).addEventListener('click', () => {
-        if (chart()) {
-          chart().zoom(1.2);
+        const chartInstance = chart();
+        if (chartInstance) {
+          chartInstance.zoom(1.2);
+        } else {
+          console.error(`Chart instance for ${id} not found`);
         }
       });
 
       // Zoom Out
       document.getElementById(`zoomOut${buttonPrefix}`).addEventListener('click', () => {
-        if (chart()) {
-          chart().zoom(0.8);
+        const chartInstance = chart();
+        if (chartInstance) {
+          chartInstance.zoom(0.8);
+        } else {
+          console.error(`Chart instance for ${id} not found`);
         }
       });
 
       // Autoscale
       document.getElementById(`autoscale${buttonPrefix}`).addEventListener('click', () => {
-        if (chart()) {
-          chart().resetZoom();
+        const chartInstance = chart();
+        if (chartInstance) {
+          chartInstance.resetZoom();
+        } else {
+          console.error(`Chart instance for ${id} not found`);
         }
       });
 
       // Full Screen
       document.getElementById(`fullScreen${buttonPrefix}`).addEventListener('click', () => {
-        const chartContainer = document.getElementById(id).parentElement;
+        const chartContainer = document.querySelector(`#${id}Container`);
+        if (!chartContainer) {
+          console.error(`Chart container for ${id} not found`);
+          return;
+        }
         if (!document.fullscreenElement) {
-          chartContainer.requestFullscreen().catch(err => {
+          const requestFullscreen = chartContainer.requestFullscreen || chartContainer.webkitRequestFullscreen || chartContainer.mozRequestFullScreen || chartContainer.msRequestFullscreen;
+          requestFullscreen.call(chartContainer).then(() => {
+            resizeCanvas(chart());
+          }).catch(err => {
             console.error(`Error entering full screen for ${id}:`, err);
           });
         } else {
-          document.exitFullscreen();
+          const exitFullscreen = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen || document.msExitFullscreen;
+          exitFullscreen.call(document).then(() => {
+            resizeCanvas(chart());
+          }).catch(err => {
+            console.error(`Error exiting full screen for ${id}:`, err);
+          });
         }
       });
+    });
+
+    // Full-screen icon toggle and canvas resize
+    document.addEventListener('fullscreenchange', () => {
+      charts.forEach(({ id, buttonPrefix, chart, container }) => {
+        const chartContainer = document.querySelector(container);
+        const fullScreenBtn = document.getElementById(`fullScreen${buttonPrefix}`);
+        if (document.fullscreenElement === chartContainer) {
+          fullScreenBtn.querySelector('i').classList.replace('bi-arrows-fullscreen', 'bi-fullscreen-exit');
+          resizeCanvas(chart());
+        } else {
+          fullScreenBtn.querySelector('i').classList.replace('bi-fullscreen-exit', 'bi-arrows-fullscreen');
+          resizeCanvas(chart());
+        }
+      });
+      const tableContainer = document.querySelector('.table-inner');
+      const fullScreenTableBtn = document.getElementById('fullScreenTableEnergySaving');
+      if (document.fullscreenElement === tableContainer) {
+        fullScreenTableBtn.querySelector('i').classList.replace('bi-arrows-fullscreen', 'bi-fullscreen-exit');
+      } else {
+        fullScreenTableBtn.querySelector('i').classList.replace('bi-fullscreen-exit', 'bi-arrows-fullscreen');
+      }
     });
 
     // Table controls
@@ -1096,23 +1172,18 @@
 
     document.getElementById('fullScreenTableEnergySaving').addEventListener('click', () => {
       const tableContainer = document.querySelector('.table-inner');
+      if (!tableContainer) {
+        console.error('Table container for energySavingTable not found');
+        return;
+      }
       if (!document.fullscreenElement) {
-        tableContainer.requestFullscreen().catch(err => {
+        const requestFullscreen = tableContainer.requestFullscreen || tableContainer.webkitRequestFullscreen || tableContainer.mozRequestFullScreen || tableContainer.msRequestFullscreen;
+        requestFullscreen.call(tableContainer).catch(err => {
           console.error('Error entering full screen for energySavingTable:', err);
         });
       } else {
-        document.exitFullscreen();
-      }
-    });
-
-    // Force redraw on browser zoom
-    window.addEventListener('resize', () => {
-      const table = document.getElementById('energySavingTable');
-      if (table) {
-        table.style.display = 'none';
-        setTimeout(() => {
-          table.style.display = 'table';
-        }, 0);
+        const exitFullscreen = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen || document.msExitFullscreen;
+        exitFullscreen.call(document);
       }
     });
 
@@ -1127,6 +1198,11 @@
       var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
       var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
         return new bootstrap.Tooltip(tooltipTriggerEl);
+      });
+
+      // Initial canvas resize for all charts
+      charts.forEach(({ chart }) => {
+        resizeCanvas(chart());
       });
     });
   </script>

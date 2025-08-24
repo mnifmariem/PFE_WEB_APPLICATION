@@ -212,6 +212,12 @@
       overflow: hidden;
     }
 
+    #correlationChartContainer canvas {
+      width: 100% !important;
+      height: 100% !important;
+      max-height: 100%;
+    }
+
     #comparisonChartContainer:fullscreen,
     #powerChartContainer:fullscreen,
     #correlationChartContainer:fullscreen {
@@ -348,9 +354,11 @@
     }
 
     .correlation-plot .chart-container {
-      height: 500px; /* Increased height to ensure visibility */
+      height: 600px;
       position: relative;
-      overflow: visible; /* Changed to visible to avoid clipping */
+      overflow: visible;
+      padding-bottom: 20px;
+      margin-bottom: 30px;
     }
 
     .correlation-stats {
@@ -434,6 +442,11 @@
       .chart-container {
         height: 300px;
       }
+      .correlation-plot .chart-container {
+        height: 450px;
+        padding-bottom: 20px;
+        margin-bottom: 30px;
+      }
       .chart-wrapper {
         margin-bottom: 0;
       }
@@ -453,9 +466,6 @@
       .correlation-plot {
         margin-top: 20px;
         margin-bottom: 60px;
-      }
-      .correlation-plot .chart-container {
-        height: 350px; /* Adjusted for smaller screens */
       }
       .correlation-stats {
         margin-bottom: 15px;
@@ -529,12 +539,10 @@
             <h5 class="blue-title power-spectrum-title">Power Spectrum (Goertzel power vs Frequency)</h5>
             <div class="chart-controls">
               <button id="downloadPngPower" data-bs-toggle="tooltip" title="Download PNG"><i class="bi bi-download"></i></button>
-              <button id="zoomSelectPower" data-bs-toggle="tooltip" title="Zoom Select"><i class="bi bi-zoom-in"></i></button>
-              <button id="panPower" data-bs-toggle="tooltip" title="Pan"><i class="bi bi-arrows-move"></i></button>
+              <button id="zoomSelectPower" data-bs-toggle="tooltip" title="Zoom Select"><i class="bi bi-crop"></i></button>
               <button id="zoomInPower" data-bs-toggle="tooltip" title="Zoom In"><i class="bi bi-zoom-in"></i></button>
               <button id="zoomOutPower" data-bs-toggle="tooltip" title="Zoom Out"><i class="bi bi-zoom-out"></i></button>
               <button id="autoscalePower" data-bs-toggle="tooltip" title="Autoscale"><i class="bi bi-fullscreen"></i></button>
-              <button id="resetAxisPower" data-bs-toggle="tooltip" title="Reset Axis"><i class="bi bi-arrow-counterclockwise"></i></button>
               <button id="fullScreenPower" data-bs-toggle="tooltip" title="Full Screen"><i class="bi bi-arrows-fullscreen"></i></button>
             </div>
             <canvas id="powerChart"></canvas>
@@ -584,12 +592,10 @@
             <h5 class="blue-title">Goertzel Comparison Plot (Real-time)</h5>
             <div class="chart-controls">
               <button id="downloadPng" data-bs-toggle="tooltip" title="Download PNG"><i class="bi bi-download"></i></button>
-              <button id="zoomSelect" data-bs-toggle="tooltip" title="Zoom Select"><i class="bi bi-zoom-in"></i></button>
-              <button id="pan" data-bs-toggle="tooltip" title="Pan"><i class="bi bi-arrows-move"></i></button>
+              <button id="zoomSelect" data-bs-toggle="tooltip" title="Zoom Select"><i class="bi bi-crop"></i></button>
               <button id="zoomIn" data-bs-toggle="tooltip" title="Zoom In"><i class="bi bi-zoom-in"></i></button>
               <button id="zoomOut" data-bs-toggle="tooltip" title="Zoom Out"><i class="bi bi-zoom-out"></i></button>
               <button id="autoscale" data-bs-toggle="tooltip" title="Autoscale"><i class="bi bi-fullscreen"></i></button>
-              <button id="resetAxis" data-bs-toggle="tooltip" title="Reset Axis"><i class="bi bi-arrow-counterclockwise"></i></button>
               <button id="fullScreen" data-bs-toggle="tooltip" title="Full Screen"><i class="bi bi-arrows-fullscreen"></i></button>
             </div>
             <canvas id="comparisonChart"></canvas>
@@ -621,8 +627,7 @@
             <h5 class="blue-title">Correlation: Edge Device (Python) vs Sensor Node (MSP430)</h5>
             <div class="chart-controls">
               <button id="downloadPngCorrelation" data-bs-toggle="tooltip" title="Download PNG"><i class="bi bi-download"></i></button>
-              <button id="zoomSelectCorrelation" data-bs-toggle="tooltip" title="Zoom Select"><i class="bi bi-zoom-in"></i></button>
-              <button id="panCorrelation" data-bs-toggle="tooltip" title="Pan"><i class="bi bi-arrows-move"></i></button>
+              <button id="zoomSelectCorrelation" data-bs-toggle="tooltip" title="Zoom Select"><i class="bi bi-crop"></i></button>
               <button id="zoomInCorrelation" data-bs-toggle="tooltip" title="Zoom In"><i class="bi bi-zoom-in"></i></button>
               <button id="zoomOutCorrelation" data-bs-toggle="tooltip" title="Zoom Out"><i class="bi bi-zoom-out"></i></button>
               <button id="autoscaleCorrelation" data-bs-toggle="tooltip" title="Autoscale"><i class="bi bi-fullscreen"></i></button>
@@ -743,39 +748,32 @@
 
       createComparisonPlot(rawData, goertzelData, samplingRate = 10923, freqLimit = 1500, selectedFreqs = []) {
         try {
-          // Convert raw data to acceleration for FFT
           const xSeriesG = rawData.slice(0, this.N_ALGORITHMS).map(val => this.adcToAcceleration(Number(val)));
           console.log('xSeriesG sample (for FFT):', xSeriesG.slice(0, 10), 'Length:', xSeriesG.length);
 
-          // Extract frequencies from goertzelData within freqLimit
           let msp430Frequencies = goertzelData.map(item => item.freq).filter(freq => freq <= freqLimit);
           if (selectedFreqs.length > 0) {
             msp430Frequencies = msp430Frequencies.filter(freq => selectedFreqs.includes(freq));
           }
           console.log('MSP430 Frequencies within freqLimit and selected:', msp430Frequencies);
 
-          // Calculate Sensor Node powers using COM port coefficients
           const webAppPowersData = this.calculateWebAppPowers(goertzelData, freqLimit);
           let msp430PowersCalculated = webAppPowersData.map(item => item.power_g).filter((_, i) => msp430Frequencies.includes(goertzelData[i].freq));
           console.log('MSP430 Powers (Web App Calculated) within freqLimit and selected:', msp430PowersCalculated);
 
-          // Compute Edge Device Goertzel power using rawData (ADC values) within freqLimit and selected
           const magnitudeBasic = msp430Frequencies.map(freq => 
             this.goertzel(rawData, freq, samplingRate, rawData.length)
           );
           console.log('Edge Device Goertzel Powers within freqLimit and selected:', magnitudeBasic);
 
-          // Compute FFT using acceleration values
           const { fftSeries, fSeries, fftPowers } = this.simpleFFT(xSeriesG, samplingRate, msp430Frequencies);
           console.log('FFT Frequencies sample:', fSeries.slice(0, 10), 'FFT Powers sample:', fftSeries.slice(0, 10));
           console.log('FFT Powers at MSP430 frequencies:', fftPowers);
 
-          // Destroy previous chart if it exists
           if (this.chart) {
             this.chart.destroy();
           }
 
-          // Create the chart
           this.chart = new Chart(this.ctx, {
             type: 'line',
             data: {
@@ -877,7 +875,6 @@
             }
           });
 
-          // Return comparison data for table
           return {
             frequencies: msp430Frequencies,
             fftPowers: fftPowers,
@@ -941,7 +938,7 @@
 
       highlightSelectedFreqs(selectedFreqs) {
         if (this.chart && selectedFreqs.length > 0) {
-          const datasetIndex = 1; // Goertzel in Sensor Node dataset
+          const datasetIndex = 1;
           const activeElements = selectedFreqs.map(freq => {
             const dataIndex = this.chart.data.datasets[datasetIndex].data.findIndex(d => d.x === freq);
             return dataIndex !== -1 ? { datasetIndex, index: dataIndex } : null;
@@ -1026,14 +1023,12 @@
           this.correlationChart.destroy();
         }
 
-        // Use fixed MSP430 frequencies and powers from provided table
         const msp430Frequencies = [662, 754, 799, 845, 936, 1005, 1074, 1165, 1233, 1279, 1371];
         const msp430Powers = [0.01500, 0.01397, 0.01017, 0.00649, 0.01176, 0.00808, 0.01056, 0.00767, 0.00191, 0.00136, 0.00304];
         const pythonPowers = [0.01493, 0.01397, 0.01015, 0.00655, 0.01187, 0.00792, 0.01057, 0.00756, 0.00195, 0.00139, 0.00307];
         const fftPowers = [0.01493, 0.01397, 0.01015, 0.00655, 0.01187, 0.00792, 0.01057, 0.00756, 0.00195, 0.00139, 0.00307];
         const differences = [-0.4, 0.0, 0.2, -0.9, -0.9, 2.0, -0.1, 1.5, -2.1, -2.2, -1.0];
 
-        // Filter powers based on selected frequencies
         const selectedFreqs = Array.from(document.querySelectorAll('#freqSelectContainer button.selected')).map(btn => parseFloat(btn.value));
         let filteredFreqs = msp430Frequencies;
         let filteredPythonPowers = pythonPowers;
@@ -1049,7 +1044,8 @@
           filteredMsp430Powers = sensorNodePowers;
         }
 
-        // Calculate correlation, RMSE, and relative error
+        console.log('Correlation plot data:', { filteredFreqs, filteredPythonPowers, filteredMsp430Powers });
+
         let correlation = 0;
         let rmse = 0;
         let meanRelativeError = 0;
@@ -1068,7 +1064,7 @@
           }
           const num = n * sumXY - sumX * sumY;
           const denom = Math.sqrt((n * sumX2 - sumX * sumX) * (n * sumY2 - sumY * sumY));
-          correlation = denom > 1e-10 ? num / denom : (num === 0 ? 1 : 0); // Handle zero denominator
+          correlation = denom > 1e-10 ? num / denom : (num === 0 ? 1 : 0);
           
           const diff = filteredMsp430Powers.map((v, i) => v - filteredPythonPowers[i]);
           rmse = Math.sqrt(diff.reduce((sum, val) => sum + val * val, 0) / n);
@@ -1079,10 +1075,8 @@
           console.warn('Insufficient data points for correlation calculation. Displaying default values.');
         }
 
-        // Dynamically adjust max based on data to include 0.0175
-        const maxPower = Math.max(0.0175, ...filteredPythonPowers, ...filteredMsp430Powers);
+        const maxPower = Math.max(0.02, ...filteredPythonPowers, ...filteredMsp430Powers) * 1.3;
 
-        // Update stats display with new layout and added space
         const statsDiv = document.getElementById('correlationStats');
         statsDiv.innerHTML = `
           <div class="correlation-stats">
@@ -1105,7 +1099,12 @@
           </div>
         `;
 
-        // Create correlation plot with adjusted scaling and padding
+        // Limit annotations to a maximum of 10 to reduce clutter
+        const maxAnnotations = 10;
+        const annotationFreqs = filteredFreqs.slice(0, maxAnnotations);
+        const annotationPythonPowers = filteredPythonPowers.slice(0, maxAnnotations);
+        const annotationMsp430Powers = filteredMsp430Powers.slice(0, maxAnnotations);
+
         this.correlationChart = new Chart(this.correlationCtx, {
           type: 'scatter',
           data: {
@@ -1128,6 +1127,11 @@
           options: {
             responsive: true,
             maintainAspectRatio: false,
+            layout: {
+              padding: {
+                bottom: 30 // Added to ensure x-axis title has space
+              }
+            },
             scales: {
               x: {
                 title: { display: true, text: 'Edge Device Goertzel Power (g²)' },
@@ -1135,8 +1139,8 @@
                 ticks: {
                   callback: value => value.toFixed(4),
                   stepSize: 0.0025,
-                  padding: 5, /* Increased padding for better visibility */
-                  max: maxPower * 1.1 /* Added 10% padding above max */
+                  padding: 15, // Increased for more space
+                  max: maxPower
                 }
               },
               y: {
@@ -1145,8 +1149,8 @@
                 ticks: {
                   callback: value => value.toFixed(4),
                   stepSize: 0.0025,
-                  padding: 5, /* Increased padding for better visibility */
-                  max: maxPower * 1.1 /* Added 10% padding above max */
+                  padding: 15,
+                  max: maxPower
                 }
               }
             },
@@ -1165,42 +1169,40 @@
                 }
               },
               zoom: {
-                pan: {
-                  enabled: false,
-                  mode: 'xy'
-                },
+                pan: { enabled: false, mode: 'xy' },
                 zoom: {
-                  wheel: {
-                    enabled: false
-                  },
-                  pinch: {
-                    enabled: false
-                  },
+                  wheel: { enabled: false },
+                  pinch: { enabled: false },
                   mode: 'xy',
-                  drag: {
-                    enabled: false
-                  }
+                  drag: { enabled: false }
                 }
+              },
+              annotation: {
+                annotations: annotationFreqs.map((freq, i) => ({
+                  type: 'label',
+                  xValue: annotationPythonPowers[i],
+                  yValue: annotationMsp430Powers[i],
+                  content: `${freq} Hz`,
+                  font: { size: 7 }, // Further reduced font size
+                  color: 'black',
+                  xAdjust: 15,
+                  yAdjust: -15 // Moved further above points
+                }))
               }
-            },
-            annotation: {
-              annotations: filteredFreqs.map((freq, i) => ({
-                type: 'label',
-                xValue: filteredPythonPowers[i],
-                yValue: filteredMsp430Powers[i],
-                content: `${freq} Hz`,
-                font: { size: 10 },
-                color: 'black',
-                xAdjust: 10,
-                yAdjust: 0
-              }))
             }
           }
+        });
+
+        // Log canvas dimensions for debugging
+        console.log('Correlation chart canvas dimensions:', {
+          width: this.correlationCanvas.width,
+          height: this.correlationCanvas.height,
+          clientWidth: this.correlationCanvas.clientWidth,
+          clientHeight: this.correlationCanvas.clientHeight
         });
       }
     }
 
-    // Constants
     const VCC = 3.0;
     const SENSITIVITY = 0.56;
     const ADC_MAX = 1023;
@@ -1211,7 +1213,6 @@
     let goertzelData = JSON.parse(localStorage.getItem('scenario2Data')) || [];
     let comparisonPlotter = null;
 
-    // Power calculation function
     function calculatePower(Q0, Q1, Q2, c, fixedPointShift = 18, N = 480) {
       const a = BigInt(Q1) * BigInt(Q1);
       const b = BigInt(Q2) * BigInt(Q2);
@@ -1223,7 +1224,6 @@
       return power;
     }
 
-    // Function to download table data as CSV
     function downloadTableAsCSV(tableId, filename) {
       const table = document.querySelector(`#${tableId} table`);
       if (!table) return;
@@ -1231,17 +1231,14 @@
       const rows = table.querySelectorAll('tr');
       const csv = [];
       
-      // Add header
       const headers = Array.from(rows[0].querySelectorAll('th')).map(th => `"${th.textContent.replace(/"/g, '""')}"`);
       csv.push(headers.join(','));
 
-      // Add data rows
       for (let i = 1; i < rows.length; i++) {
         const cols = Array.from(rows[i].querySelectorAll('td')).map(td => `"${td.textContent.replace(/"/g, '""')}"`);
         csv.push(cols.join(','));
       }
 
-      // Create CSV file and trigger download
       const csvContent = csv.join('\n');
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement('a');
@@ -1251,7 +1248,6 @@
       URL.revokeObjectURL(link.href);
     }
 
-    // Function to display data and calculate powers
     function displayData() {
       console.log('Starting displayData. rawData:', rawData, 'goertzelData:', goertzelData);
       if (!rawData || !goertzelData.length) {
@@ -1270,7 +1266,6 @@
       const dynamicTargetFreq = document.getElementById('dynamicTargetFreq');
 
       try {
-        // Parse and validate rawData (without displaying)
         let parsedRawData = rawData;
         console.log('Raw data before parsing:', parsedRawData);
         
@@ -1292,11 +1287,9 @@
 
         rawData = parsedRawData;
 
-        // Dynamically set data point and target frequencies
         dynamicDataPoint.textContent = parsedRawData.length;
         dynamicTargetFreq.textContent = goertzelData.length;
 
-        // Calculate and display power results
         console.log('Calculating powers. goertzelData:', goertzelData);
         const powerResultsData = [];
         for (let i = 0; i < goertzelData.length; i++) {
@@ -1306,7 +1299,7 @@
           const power_ms = power_g * MS_FACTOR;
           powerResultsData.push({ freq, c, q0, q1, q2, power_adc, power_g, power_ms });
         }
-        // Display power results table with visible title
+
         powerResults.innerHTML = `
           <h4>Power Calculations</h4>
           <div class="table-controls">
@@ -1330,7 +1323,6 @@
           powerResultsData.map(row => `<tr><td>${row.freq}</td><td>${row.c}</td><td>${row.q0}</td><td>${row.q1}</td><td>${row.q2}</td><td>${row.power_adc.toFixed(6)}</td><td>${row.power_g.toFixed(6)}</td><td>${row.power_ms.toFixed(6)}</td></tr>`).join('') +
           `</tbody></table>`;
 
-        // Populate frequency selection buttons
         const frequencies = goertzelData.map(item => item.freq).filter(freq => freq >= 500 && freq <= 3000);
         freqSelectContainer.innerHTML = frequencies.map(freq => 
           `<button class="freq-option" value="${freq}">${freq} Hz</button>`
@@ -1348,15 +1340,12 @@
             comparisonTable.innerHTML = tableHTML;
             comparisonPlotter.highlightSelectedFreqs(selectedFreqs);
 
-            // Toggle visibility of selected frequencies section
             selectedFreqsDiv.classList.toggle('active', selectedFreqs.length > 0);
 
-            // Update correlation plot
             comparisonPlotter.createCorrelationPlot(comparisonData);
           });
         });
 
-        // Create comparison plot
         if (!comparisonPlotter) {
           comparisonPlotter = new GoertzelComparisonPlotter('comparisonChart', 'powerChart', 'correlationChart');
         }
@@ -1366,10 +1355,8 @@
         const tableHTML = comparisonPlotter.generateComparisonTable(comparisonData);
         comparisonTable.innerHTML = tableHTML;
 
-        // Create correlation plot
         comparisonPlotter.createCorrelationPlot(comparisonData);
 
-        // Add control event listeners for charts
         const charts = [
           { id: 'comparisonChart', buttonPrefix: '', chart: () => comparisonPlotter.chart, container: '#comparisonChartContainer' },
           { id: 'powerChart', buttonPrefix: 'Power', chart: () => comparisonPlotter.powerChart, container: '#powerChartContainer' },
@@ -1377,7 +1364,6 @@
         ];
 
         charts.forEach(({ id, buttonPrefix, chart, container }) => {
-          // Download PNG
           document.getElementById(`downloadPng${buttonPrefix}`).addEventListener('click', () => {
             const chartInstance = chart();
             if (chartInstance) {
@@ -1390,7 +1376,6 @@
             }
           });
 
-          // Zoom Select
           document.getElementById(`zoomSelect${buttonPrefix}`).addEventListener('click', () => {
             const chartInstance = chart();
             if (chartInstance) {
@@ -1402,19 +1387,6 @@
             }
           });
 
-          // Pan
-          document.getElementById(`pan${buttonPrefix}`).addEventListener('click', () => {
-            const chartInstance = chart();
-            if (chartInstance) {
-              chartInstance.options.plugins.zoom.pan.enabled = !chartInstance.options.plugins.zoom.pan.enabled;
-              chartInstance.options.plugins.zoom.zoom.drag.enabled = false;
-              chartInstance.update();
-            } else {
-              console.error(`Chart instance for ${id} not found`);
-            }
-          });
-
-          // Zoom In
           document.getElementById(`zoomIn${buttonPrefix}`).addEventListener('click', () => {
             const chartInstance = chart();
             if (chartInstance) {
@@ -1424,7 +1396,6 @@
             }
           });
 
-          // Zoom Out
           document.getElementById(`zoomOut${buttonPrefix}`).addEventListener('click', () => {
             const chartInstance = chart();
             if (chartInstance) {
@@ -1434,7 +1405,6 @@
             }
           });
 
-          // Autoscale
           document.getElementById(`autoscale${buttonPrefix}`).addEventListener('click', () => {
             const chartInstance = chart();
             if (chartInstance) {
@@ -1444,17 +1414,25 @@
             }
           });
 
-          // Reset Axis
-          document.getElementById(`resetAxis${buttonPrefix}`).addEventListener('click', () => {
-            const chartInstance = chart();
-            if (chartInstance) {
-              chartInstance.resetZoom();
-            } else {
-              console.error(`Chart instance for ${id} not found`);
-            }
-          });
+          if (id === 'correlationChart') {
+            document.getElementById(`resetAxisCorrelation`).addEventListener('click', () => {
+              const chartInstance = chart();
+              if (chartInstance) {
+                chartInstance.resetZoom();
+                chartInstance.options.plugins.zoom.zoom.drag.enabled = false;
+                chartInstance.options.plugins.zoom.pan.enabled = false;
+                chartInstance.options.scales.x.min = 0;
+                chartInstance.options.scales.x.max = maxPower;
+                chartInstance.options.scales.y.min = 0;
+                chartInstance.options.scales.y.max = maxPower;
+                chartInstance.update();
+                console.log('Correlation chart reset to default view');
+              } else {
+                console.error(`Chart instance for ${id} not found`);
+              }
+            });
+          }
 
-          // Full Screen
           document.getElementById(`fullScreen${buttonPrefix}`).addEventListener('click', () => {
             const chartContainer = document.querySelector(container);
             if (!chartContainer) {
@@ -1474,7 +1452,6 @@
           });
         });
 
-        // Add full-screen change listener to update button icons
         document.addEventListener('fullscreenchange', () => {
           charts.forEach(({ id, buttonPrefix, container }) => {
             const chartContainer = document.querySelector(container);
@@ -1487,19 +1464,16 @@
           });
         });
 
-        // Add event listeners for table controls
         const tables = [
           { id: 'powerResults', buttonPrefix: 'Power', filename: 'power_calculations.csv', container: '#powerResults' },
           { id: 'comparisonTable', buttonPrefix: 'Comparison', filename: 'comparison_results.csv', container: '#comparisonTable' }
         ];
 
         tables.forEach(({ id, buttonPrefix, filename, container }) => {
-          // Download CSV
           document.getElementById(`downloadCsv${buttonPrefix}`).addEventListener('click', () => {
             downloadTableAsCSV(id, filename);
           });
 
-          // Full Screen Table
           document.getElementById(`fullScreenTable${buttonPrefix}`).addEventListener('click', () => {
             const tableContainer = document.querySelector(container);
             if (!tableContainer) {
@@ -1518,7 +1492,6 @@
           });
         });
 
-        // Frequency limit update with slider
         freqLimitSlider.addEventListener('input', () => {
           const newLimit = Math.max(500, Math.min(3000, parseInt(freqLimitSlider.value)));
           freqLimitSlider.value = newLimit;
@@ -1531,7 +1504,6 @@
           comparisonPlotter.highlightSelectedFreqs(selectedFreqs);
           document.getElementById('freqLimitValue').textContent = `${newLimit} Hz`;
 
-          // Update correlation plot
           comparisonPlotter.createCorrelationPlot(comparisonData);
         });
 
@@ -1558,7 +1530,6 @@
       console.log('Power calculations and comparison plot displayed successfully.');
     }
 
-    // Sidebar toggle
     function toggleSidebar() {
       const sidebar = document.getElementById('sidebar');
       const content = document.getElementById('content');
@@ -1570,7 +1541,6 @@
       toggleCollapsedBtn.style.display = isCollapsed ? 'block' : 'none';
     }
 
-    // Initial check
     document.addEventListener('DOMContentLoaded', () => {
       const toggleBtn = document.getElementById('sidebar-toggle');
       const toggleCollapsedBtn = document.getElementById('sidebar-toggle-collapsed');

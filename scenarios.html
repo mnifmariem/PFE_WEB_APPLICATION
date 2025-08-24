@@ -224,6 +224,44 @@
     .chart-container {
       height: 300px;
       position: relative;
+      width: 100%;
+    }
+
+    .chart-container:fullscreen {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: #fff;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    .chart-container:fullscreen canvas {
+      width: 100% !important;
+      height: auto !important;
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+
+    .chart-wrapper .chart-controls + div:fullscreen {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      box-sizing: border-box;
+      background-color: #fff;
+    }
+
+    .chart-wrapper .chart-controls + div:fullscreen .chart-container {
+      width: auto;
+      height: auto;
+      max-width: 100%;
+      max-height: 100%;
     }
 
     .chart-controls, .table-controls {
@@ -273,18 +311,7 @@
     .table-inner:fullscreen table {
       width: 100%;
       max-width: 100%;
-      font-size: 1.2rem;
-    }
-
-    .chart-wrapper .chart-controls + div:fullscreen {
-      width: 100vw;
-      height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding: 20px;
-      box-sizing: border-box;
-      background-color: #fff;
+      font-size: inherit;
     }
 
     .table-wrapper table {
@@ -379,7 +406,7 @@
         font-size: 0.8rem;
       }
       .table-inner:fullscreen table {
-        font-size: 1rem;
+        font-size: inherit;
       }
       .insights-grid {
         grid-template-columns: 1fr;
@@ -406,7 +433,7 @@
         <i class="bi bi-arrow-left" style="color: #333;"></i>
       </button>
     </div>
-    <h1><i class="bi bi-gear"></i>  IoT Predictive Maintenance Analysis Platform</h1>
+    <h1><i class="bi bi-gear"></i> IoT Predictive Maintenance Analysis Platform</h1>
     <h2><i class="bi bi-bar-chart" style="color: #0d6efd;"></i> Scenario Comparison</h2>
     <div class="analysis-section">
       <h4 class="compression-analysis">Data Selection Parameters</h4>
@@ -475,14 +502,13 @@
         <h4 class="chart-title">Data Transmission Proportions for Different Sample Sizes</h4>
         <div class="chart-controls">
           <button id="downloadPngPieCharts" data-bs-toggle="tooltip" title="Download PNG"><i class="bi bi-download"></i></button>
-          <button id="zoomSelectPieCharts" data-bs-toggle="tooltip" title="Zoom Select"><i class="bi bi-zoom-in"></i></button>
-          <button id="panPieCharts" data-bs-toggle="tooltip" title="Pan"><i class="bi bi-arrows-move"></i></button>
+          <button id="zoomSelectPieCharts" data-bs-toggle="tooltip" title="Zoom Select"><i class="bi bi-crop"></i></button>
           <button id="zoomInPieCharts" data-bs-toggle="tooltip" title="Zoom In"><i class="bi bi-zoom-in"></i></button>
           <button id="zoomOutPieCharts" data-bs-toggle="tooltip" title="Zoom Out"><i class="bi bi-zoom-out"></i></button>
           <button id="autoscalePieCharts" data-bs-toggle="tooltip" title="Autoscale"><i class="bi bi-fullscreen"></i></button>
           <button id="fullScreenPieCharts" data-bs-toggle="tooltip" title="Full Screen"><i class="bi bi-arrows-fullscreen"></i></button>
         </div>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">
+        <div id="pieChartsContainer" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">
           <div class="chart-container"><canvas id="pieChart100"></canvas></div>
           <div class="chart-container"><canvas id="pieChart250"></canvas></div>
           <div class="chart-container"><canvas id="pieChart480"></canvas></div>
@@ -492,11 +518,10 @@
       </div>
       <div class="chart-wrapper">
         <h4 class="chart-title">Compression Efficiency Over Scale</h4>
-        <div class="chart-container">
+        <div class="chart-container" id="compressionEfficiencyChartContainer">
           <div class="chart-controls">
             <button id="downloadPngCompressionEfficiency" data-bs-toggle="tooltip" title="Download PNG"><i class="bi bi-download"></i></button>
-            <button id="zoomSelectCompressionEfficiency" data-bs-toggle="tooltip" title="Zoom Select"><i class="bi bi-zoom-in"></i></button>
-            <button id="panCompressionEfficiency" data-bs-toggle="tooltip" title="Pan"><i class="bi bi-arrows-move"></i></button>
+            <button id="zoomSelectCompressionEfficiency" data-bs-toggle="tooltip" title="Zoom Select"><i class="bi bi-crop"></i></button>
             <button id="zoomInCompressionEfficiency" data-bs-toggle="tooltip" title="Zoom In"><i class="bi bi-zoom-in"></i></button>
             <button id="zoomOutCompressionEfficiency" data-bs-toggle="tooltip" title="Zoom Out"><i class="bi bi-zoom-out"></i></button>
             <button id="autoscaleCompressionEfficiency" data-bs-toggle="tooltip" title="Autoscale"><i class="bi bi-fullscreen"></i></button>
@@ -507,11 +532,10 @@
       </div>
       <div class="chart-wrapper byte-reduction">
         <h4 class="chart-title">Byte Reduction</h4>
-        <div class="chart-container">
+        <div class="chart-container" id="byteReductionChartContainer">
           <div class="chart-controls">
             <button id="downloadPngByteReduction" data-bs-toggle="tooltip" title="Download PNG"><i class="bi bi-download"></i></button>
-            <button id="zoomSelectByteReduction" data-bs-toggle="tooltip" title="Zoom Select"><i class="bi bi-zoom-in"></i></button>
-            <button id="panByteReduction" data-bs-toggle="tooltip" title="Pan"><i class="bi bi-arrows-move"></i></button>
+            <button id="zoomSelectByteReduction" data-bs-toggle="tooltip" title="Zoom Select"><i class="bi bi-crop"></i></button>
             <button id="zoomInByteReduction" data-bs-toggle="tooltip" title="Zoom In"><i class="bi bi-zoom-in"></i></button>
             <button id="zoomOutByteReduction" data-bs-toggle="tooltip" title="Zoom Out"><i class="bi bi-zoom-out"></i></button>
             <button id="autoscaleByteReduction" data-bs-toggle="tooltip" title="Autoscale"><i class="bi bi-fullscreen"></i></button>
@@ -586,23 +610,43 @@
       URL.revokeObjectURL(link.href);
     }
 
-    // Function to download all pie charts as a single PNG
+    // Function to download all pie charts as a single PNG, matching in-app layout and exact size
     function downloadPieChartsAsPNG() {
       const charts = pieCharts.filter(chart => chart.canvas.parentNode.style.display !== 'none');
       if (charts.length === 0) return;
 
-      // Create a temporary canvas to combine all pie charts
+      const container = document.getElementById('pieChartsContainer');
+      const rect = container.getBoundingClientRect();
+      const minWidth = 150; // From minmax(150px, 1fr)
+      const gap = 15; // Grid gap from CSS
+
+      // Get exact container dimensions
+      const containerWidth = Math.round(rect.width);
+      const containerHeight = Math.round(rect.height);
+
+      // Create temporary canvas with exact container dimensions
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
-      const chartWidth = charts[0].canvas.width;
-      const chartHeight = charts[0].canvas.height;
-      canvas.width = chartWidth * Math.ceil(charts.length / 2);
-      canvas.height = chartHeight * Math.ceil(charts.length / 2);
+      canvas.width = containerWidth;
+      canvas.height = containerHeight;
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+      // Calculate grid layout
+      const columns = Math.floor((containerWidth + gap) / (minWidth + gap));
+      const chartWidth = (containerWidth - gap * (columns - 1)) / columns;
+      const chartHeight = charts[0].canvas.parentElement.getBoundingClientRect().height;
+
+      // Draw each visible chart at its relative position
       charts.forEach((chart, index) => {
-        const x = (index % 2) * chartWidth;
-        const y = Math.floor(index / 2) * chartHeight;
-        ctx.drawImage(chart.canvas, x, y, chartWidth, chartHeight);
+        const col = index % columns;
+        const row = Math.floor(index / columns);
+        const x = col * (chartWidth + gap);
+        const y = row * (chartHeight + gap);
+        const chartRect = chart.canvas.parentElement.getBoundingClientRect();
+        const relativeX = chartRect.left - rect.left;
+        const relativeY = chartRect.top - rect.top;
+        ctx.drawImage(chart.canvas, relativeX, relativeY, chartRect.width, chartRect.height);
       });
 
       const link = document.createElement('a');
@@ -629,6 +673,25 @@
         `;
         tableBody.appendChild(tr);
       });
+    }
+
+    // Function to resize canvas for full-screen clarity (used for non-pie charts)
+    function resizeCanvas(chartInstance) {
+      if (!chartInstance) return;
+      const canvas = chartInstance.canvas;
+      const container = canvas.parentElement;
+      const pixelRatio = window.devicePixelRatio || 1;
+
+      // Get container dimensions
+      const width = container.clientWidth * pixelRatio;
+      const height = container.clientHeight * pixelRatio;
+
+      // Update canvas dimensions
+      canvas.width = width;
+      canvas.height = height;
+
+      // Ensure Chart.js uses the correct dimensions
+      chartInstance.resize();
     }
 
     // Initialize Pie Charts
@@ -849,9 +912,9 @@
 
     // Chart and Table controls
     const charts = [
-      { id: 'pieCharts', buttonPrefix: 'PieCharts', chart: () => pieCharts, container: '.chart-container' },
-      { id: 'compressionEfficiencyChart', buttonPrefix: 'CompressionEfficiency', chart: () => compressionEfficiencyChart, container: '.chart-container' },
-      { id: 'byteReductionChart', buttonPrefix: 'ByteReduction', chart: () => byteReductionChart, container: '.chart-container' }
+      { id: 'pieCharts', buttonPrefix: 'PieCharts', chart: () => pieCharts, container: '#pieChartsContainer' },
+      { id: 'compressionEfficiencyChart', buttonPrefix: 'CompressionEfficiency', chart: () => compressionEfficiencyChart, container: '#compressionEfficiencyChartContainer' },
+      { id: 'byteReductionChart', buttonPrefix: 'ByteReduction', chart: () => byteReductionChart, container: '#byteReductionChartContainer' }
     ];
 
     charts.forEach(({ id, buttonPrefix, chart, container }) => {
@@ -865,16 +928,6 @@
         document.getElementById(`zoomSelect${buttonPrefix}`).addEventListener('click', () => {
           pieCharts.forEach(c => {
             c.options.plugins.zoom.zoom.drag.enabled = !c.options.plugins.zoom.zoom.drag.enabled;
-            c.options.plugins.zoom.pan.enabled = false;
-            c.update();
-          });
-        });
-
-        // Pan
-        document.getElementById(`pan${buttonPrefix}`).addEventListener('click', () => {
-          pieCharts.forEach(c => {
-            c.options.plugins.zoom.pan.enabled = !c.options.plugins.zoom.pan.enabled;
-            c.options.plugins.zoom.zoom.drag.enabled = false;
             c.update();
           });
         });
@@ -894,9 +947,9 @@
           pieCharts.forEach(c => c.resetZoom());
         });
 
-        // Full Screen
+        // Full Screen (original behavior)
         document.getElementById(`fullScreen${buttonPrefix}`).addEventListener('click', () => {
-          const chartContainer = document.querySelector('.chart-wrapper .chart-controls').nextElementSibling;
+          const chartContainer = document.querySelector(container);
           if (!document.fullscreenElement) {
             chartContainer.requestFullscreen().catch(err => {
               console.error(`Error entering full screen for pie charts:`, err);
@@ -908,62 +961,107 @@
       } else {
         // Download PNG
         document.getElementById(`downloadPng${buttonPrefix}`).addEventListener('click', () => {
-          const link = document.createElement('a');
-          link.download = `${id}_plot.png`;
-          link.href = chart().toBase64Image();
-          link.click();
+          const chartInstance = chart();
+          if (chartInstance) {
+            const link = document.createElement('a');
+            link.download = `${id}_plot.png`;
+            link.href = chartInstance.toBase64Image();
+            link.click();
+          } else {
+            console.error(`Chart instance for ${id} not found`);
+          }
         });
 
         // Zoom Select
         document.getElementById(`zoomSelect${buttonPrefix}`).addEventListener('click', () => {
-          if (chart()) {
-            chart().options.plugins.zoom.zoom.drag.enabled = !chart().options.plugins.zoom.zoom.drag.enabled;
-            chart().options.plugins.zoom.pan.enabled = false;
-            chart().update();
-          }
-        });
-
-        // Pan
-        document.getElementById(`pan${buttonPrefix}`).addEventListener('click', () => {
-          if (chart()) {
-            chart().options.plugins.zoom.pan.enabled = !chart().options.plugins.zoom.pan.enabled;
-            chart().options.plugins.zoom.zoom.drag.enabled = false;
-            chart().update();
+          const chartInstance = chart();
+          if (chartInstance) {
+            chartInstance.options.plugins.zoom.zoom.drag.enabled = !chartInstance.options.plugins.zoom.zoom.drag.enabled;
+            chartInstance.update();
+          } else {
+            console.error(`Chart instance for ${id} not found`);
           }
         });
 
         // Zoom In
         document.getElementById(`zoomIn${buttonPrefix}`).addEventListener('click', () => {
-          if (chart()) {
-            chart().zoom(1.2);
+          const chartInstance = chart();
+          if (chartInstance) {
+            chartInstance.zoom(1.2);
+          } else {
+            console.error(`Chart instance for ${id} not found`);
           }
         });
 
         // Zoom Out
         document.getElementById(`zoomOut${buttonPrefix}`).addEventListener('click', () => {
-          if (chart()) {
-            chart().zoom(0.8);
+          const chartInstance = chart();
+          if (chartInstance) {
+            chartInstance.zoom(0.8);
+          } else {
+            console.error(`Chart instance for ${id} not found`);
           }
         });
 
         // Autoscale
         document.getElementById(`autoscale${buttonPrefix}`).addEventListener('click', () => {
-          if (chart()) {
-            chart().resetZoom();
+          const chartInstance = chart();
+          if (chartInstance) {
+            chartInstance.resetZoom();
+          } else {
+            console.error(`Chart instance for ${id} not found`);
           }
         });
 
         // Full Screen
         document.getElementById(`fullScreen${buttonPrefix}`).addEventListener('click', () => {
-          const chartContainer = document.getElementById(id).parentElement;
+          const chartContainer = document.querySelector(container);
+          if (!chartContainer) {
+            console.error(`Chart container for ${id} not found`);
+            return;
+          }
           if (!document.fullscreenElement) {
-            chartContainer.requestFullscreen().catch(err => {
+            const requestFullscreen = chartContainer.requestFullscreen || chartContainer.webkitRequestFullscreen || chartContainer.mozRequestFullScreen || chartContainer.msRequestFullscreen;
+            requestFullscreen.call(chartContainer).then(() => {
+              resizeCanvas(chart());
+            }).catch(err => {
               console.error(`Error entering full screen for ${id}:`, err);
             });
           } else {
-            document.exitFullscreen();
+            const exitFullscreen = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen || document.msExitFullscreen;
+            exitFullscreen.call(document).then(() => {
+              resizeCanvas(chart());
+            }).catch(err => {
+              console.error(`Error exiting full screen for ${id}:`, err);
+            });
           }
         });
+      }
+    });
+
+    // Full-screen icon toggle and canvas resize
+    document.addEventListener('fullscreenchange', () => {
+      charts.forEach(({ id, buttonPrefix, chart, container }) => {
+        const chartContainer = document.querySelector(container);
+        const fullScreenBtn = document.getElementById(`fullScreen${buttonPrefix}`);
+        if (document.fullscreenElement === chartContainer) {
+          fullScreenBtn.querySelector('i').classList.replace('bi-arrows-fullscreen', 'bi-fullscreen-exit');
+          if (id !== 'pieCharts') {
+            resizeCanvas(chart());
+          }
+        } else {
+          fullScreenBtn.querySelector('i').classList.replace('bi-fullscreen-exit', 'bi-arrows-fullscreen');
+          if (id !== 'pieCharts') {
+            resizeCanvas(chart());
+          }
+        }
+      });
+      const tableContainer = document.querySelector('#compressionTableBody').closest('.table-inner');
+      const fullScreenTableBtn = document.getElementById('fullScreenTableCompression');
+      if (document.fullscreenElement === tableContainer) {
+        fullScreenTableBtn.querySelector('i').classList.replace('bi-arrows-fullscreen', 'bi-fullscreen-exit');
+      } else {
+        fullScreenTableBtn.querySelector('i').classList.replace('bi-fullscreen-exit', 'bi-arrows-fullscreen');
       }
     });
 
@@ -974,23 +1072,18 @@
 
     document.getElementById('fullScreenTableCompression').addEventListener('click', () => {
       const tableContainer = document.querySelector('#compressionTableBody').closest('.table-inner');
+      if (!tableContainer) {
+        console.error('Table container for compressionTableBody not found');
+        return;
+      }
       if (!document.fullscreenElement) {
-        tableContainer.requestFullscreen().catch(err => {
+        const requestFullscreen = tableContainer.requestFullscreen || tableContainer.webkitRequestFullscreen || tableContainer.mozRequestFullScreen || tableContainer.msRequestFullscreen;
+        requestFullscreen.call(tableContainer).catch(err => {
           console.error('Error entering full screen for compressionTableBody:', err);
         });
       } else {
-        document.exitFullscreen();
-      }
-    });
-
-    // Force redraw on browser zoom
-    window.addEventListener('resize', () => {
-      const table = document.querySelector('.table-inner table');
-      if (table) {
-        table.style.display = 'none';
-        setTimeout(() => {
-          table.style.display = 'table';
-        }, 0);
+        const exitFullscreen = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen || document.msExitFullscreen;
+        exitFullscreen.call(document);
       }
     });
 
@@ -1064,6 +1157,10 @@
       var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
         return new bootstrap.Tooltip(tooltipTriggerEl);
       });
+
+      // Initial canvas resize for non-pie charts
+      resizeCanvas(compressionEfficiencyChart);
+      resizeCanvas(byteReductionChart);
     });
   </script>
 </body>
