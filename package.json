@@ -1,7 +1,9 @@
 {
   "dependencies": {
+    "cors": "^2.8.5",
     "express": "^5.1.0",
     "joi": "^18.0.1",
+    "loader": "^2.1.1",
     "serialport": "^13.0.0",
     "ws": "^8.18.3"
   }
