@@ -1,9 +1,86 @@
 import React, { useRef } from 'react';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  LineElement,
+  PointElement,
+  Title,
+  Tooltip,
+  Legend,
+} from 'chart.js';
 import { Line } from 'react-chartjs-2';
+import zoomPlugin from 'chartjs-plugin-zoom';
 import ChartControls from './ChartControls';
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  LineElement,
+  PointElement,
+  Title,
+  Tooltip,
+  Legend,
+  zoomPlugin
+);
 
 const EnergySavingChart = ({ dataSizes, savingsPercent }) => {
   const chartRef = useRef(null);
+
+  // Control functions
+  const downloadChart = (filename = 'energy_saving_chart.png') => {
+    if (chartRef.current) {
+      const link = document.createElement('a');
+      link.download = filename;
+      link.href = chartRef.current.toBase64Image();
+      link.click();
+    }
+  };
+
+  const toggleFullScreen = () => {
+    if (chartRef.current) {
+      const element = chartRef.current.canvas.parentElement;
+      if (!document.fullscreenElement) {
+        element.requestFullscreen().catch((err) => {
+          console.error('Error entering full screen:', err);
+        });
+      } else {
+        document.exitFullscreen();
+      }
+    }
+  };
+
+  const zoomIn = () => {
+    if (chartRef.current) {
+      chartRef.current.zoom(1.1);
+    }
+  };
+
+  const zoomOut = () => {
+    if (chartRef.current) {
+      chartRef.current.zoom(0.9);
+    }
+  };
+
+  const resetZoom = () => {
+    if (chartRef.current) {
+      chartRef.current.resetZoom();
+    }
+  };
+
+  const autoscale = () => {
+    if (chartRef.current) {
+      chartRef.current.resetZoom();
+      chartRef.current.update('none');
+    }
+  };
+
+  const zoomSelect = () => {
+    if (chartRef.current && chartRef.current.options?.plugins?.zoom) {
+      chartRef.current.options.plugins.zoom.zoom.drag.enabled = true;
+      chartRef.current.update('none');
+    }
+  };
 
   const chartData = {
     labels: dataSizes,
@@ -17,9 +94,9 @@ const EnergySavingChart = ({ dataSizes, savingsPercent }) => {
         fill: true,
         tension: 0.1,
         pointRadius: 5,
-        pointHoverRadius: 7
-      }
-    ]
+        pointHoverRadius: 7,
+      },
+    ],
   };
 
   const options = {
@@ -27,19 +104,37 @@ const EnergySavingChart = ({ dataSizes, savingsPercent }) => {
     maintainAspectRatio: false,
     scales: {
       x: { title: { display: true, text: 'Data Size (samples)' } },
-      y: { title: { display: true, text: 'Energy Saving (%)' }, min: 0, max: 100 }
+      y: { title: { display: true, text: 'Energy Saving (%)' }, min: 0, max: 100 },
     },
     plugins: {
       title: { display: true, text: 'Energy Saving Comparison' },
       legend: { position: 'top' },
       datalabels: { display: false },
-    }
+      zoom: {
+        zoom: {
+          wheel: { enabled: false },
+          pinch: { enabled: true },
+          drag: { enabled: false, backgroundColor: 'rgba(225,225,225,0.3)' },
+          mode: 'xy',
+        },
+        pan: { enabled: true, mode: 'xy' },
+      },
+    },
   };
 
   return (
     <div className="chart-wrapper">
       <div className="chart-container">
-        <ChartControls chartInstance={chartRef.current} />
+        <ChartControls
+          onDownload={() => downloadChart('energy_saving_chart.png')}
+          onFullScreen={toggleFullScreen}
+          onZoomIn={zoomIn}
+          onZoomOut={zoomOut}
+          onAutoscale={autoscale}
+          onZoomSelect={zoomSelect}
+          onReset={resetZoom}
+          chartInstance={chartRef.current}
+        />
         <Line ref={chartRef} data={chartData} options={options} />
       </div>
     </div>
