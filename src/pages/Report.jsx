@@ -376,12 +376,14 @@ const Report = () => {
                 <p><strong>Recommendation:</strong> Use Scenario 2 with Goertzel for datasets exceeding 250 samples to optimize energy, latency, compression, and computational efficiency in IoT predictive maintenance.</p>
               </div>
 
-              <button 
-                className="btn btn-secondary download-report-btn" 
-                onClick={downloadReport}
-              >
-                <i className="bi bi-download"></i> Download as PDF
-              </button>
+             <div style={{ display: 'flex', justifyContent: 'center', marginTop: 32 }}>
+  <button 
+    className="btn btn-secondary download-report-btn"
+    onClick={downloadReport}
+  >
+    <i className="bi bi-download"></i> Download as PDF
+  </button>
+</div>
             </div>
           </div>
         )}

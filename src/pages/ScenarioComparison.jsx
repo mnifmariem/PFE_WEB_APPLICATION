@@ -29,7 +29,7 @@ const ScenarioComparison = () => {
   ];
 
   const pieChartData = sample_sizes.map((size, index) => [
-    { name: 'Scenario 1', value: scenario1_bytes[index], color: '#4A90E2' },
+    { name: 'Scenario 1', value: scenario1_bytes[index], color: '#4e92e0ff' },
     { name: 'Scenario 2', value: scenario2_bytes[index], color: '#7ED957' }
   ]);
 

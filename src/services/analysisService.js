@@ -11,7 +11,7 @@ const api = axios.create({
 export const getEnergyAnalysis = async (dataSizes) => {
   const params = dataSizes ? { dataSizes: dataSizes.join(',') } : {};
   const response = await api.get('/data/energy-analysis', { params });
-  return response.data.analysis;
+  return response.data; 
 };
 
 export const getLatencyAnalysis = async (dataSizes) => {

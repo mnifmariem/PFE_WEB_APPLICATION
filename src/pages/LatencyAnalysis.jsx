@@ -132,7 +132,7 @@ const LatencyAnalysis = () => {
           },
           zoom: {
             zoom: {
-              wheel: { enabled: true },
+              wheel: { enabled: false },
               pinch: { enabled: true },
               drag: { enabled: false, backgroundColor: 'rgba(225,225,225,0.3)' },
               mode: 'xy',
@@ -279,7 +279,7 @@ const LatencyAnalysis = () => {
           },
           zoom: {
             zoom: {
-              wheel: { enabled: true },
+              wheel: { enabled: false },
               pinch: { enabled: true },
               drag: { enabled: false, backgroundColor: 'rgba(225,225,225,0.3)' },
               mode: 'xy',
